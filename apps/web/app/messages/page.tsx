@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { API_URL, getAuthToken } from '../../lib/api';
+import AppShell from '../../components/AppShell';
 
 export default function MessagesPage() {
   const router = useRouter();
@@ -53,17 +54,8 @@ export default function MessagesPage() {
   }
 
   return (
-    <main style={{ minHeight: '100vh', background: '#eef4ff', padding: 24 }}>
-      <div style={{ maxWidth: 900, margin: '0 auto', background: 'white', borderRadius: 18, padding: 24, boxShadow: '0 10px 25px rgba(15,23,42,0.06)' }}>
-        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <div>
-            <div style={{ color: '#5b6b8a', fontSize: 12, letterSpacing: '0.12em', textTransform: 'uppercase' }}>SVIT Notify</div>
-            <h1 style={{ margin: '8px 0 0', fontSize: 30 }}>Send Message</h1>
-          </div>
-          <a href="/dashboard" style={{ color: '#0f172a', textDecoration: 'none', fontWeight: 700 }}>Back to Dashboard</a>
-        </header>
-
-        <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 18 }}>
+    <AppShell title="Send Message" subtitle="Send a one-off message">
+      <form onSubmit={handleSubmit} style={{ background: 'white', borderRadius: 18, padding: 24, boxShadow: '0 10px 25px rgba(15,23,42,0.06)', display: 'grid', gap: 18 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
             <div>
               <label style={{ display: 'block', marginBottom: 8, color: '#475569', fontWeight: 600 }}>Channel</label>
@@ -94,8 +86,7 @@ export default function MessagesPage() {
             {loading ? 'Sending...' : 'Send now'}
           </button>
         </form>
-      </div>
-    </main>
+    </AppShell>
   );
 }
 

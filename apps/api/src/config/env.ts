@@ -19,4 +19,5 @@ export const env = {
   supabaseAnonKey: process.env.SUPABASE_ANON_KEY || '',
   supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
   supabaseOrganizationId: process.env.SUPABASE_ORGANIZATION_ID || '',
+  whatsappVerifyToken: process.env.WHATSAPP_VERIFY_TOKEN || '',
 };

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { API_URL, getAuthToken } from '../../lib/api';
+import AppShell from '../../components/AppShell';
 
 interface Template {
   id: string;
@@ -100,17 +101,8 @@ export default function TemplatesPage() {
   }
 
   return (
-    <main style={{ minHeight: '100vh', background: '#eef4ff', padding: 24 }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto', display: 'grid', gap: 20 }}>
-        <header style={{ background: '#0f172a', color: 'white', borderRadius: 18, padding: '18px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <div style={{ fontSize: 12, letterSpacing: '0.12em', textTransform: 'uppercase', opacity: 0.75 }}>SVIT Notify</div>
-            <h1 style={{ margin: '6px 0 0', fontSize: 30 }}>Templates</h1>
-          </div>
-          <a href="/dashboard" style={{ color: 'white', textDecoration: 'none', fontWeight: 700 }}>Back to Dashboard</a>
-        </header>
-
-        <section style={{ display: 'grid', gridTemplateColumns: '420px 1fr', gap: 20 }}>
+    <AppShell title="Templates" subtitle="Message template library">
+      <section style={{ display: 'grid', gridTemplateColumns: '420px 1fr', gap: 20 }}>
           <form onSubmit={handleSubmit} style={{ background: 'white', borderRadius: 18, padding: 20, boxShadow: '0 10px 25px rgba(15,23,42,0.06)' }}>
             <h2 style={{ marginTop: 0 }}>Create template</h2>
             <div style={{ display: 'grid', gap: 14 }}>
@@ -154,8 +146,7 @@ export default function TemplatesPage() {
             </table>
           </div>
         </section>
-      </div>
-    </main>
+    </AppShell>
   );
 }
 

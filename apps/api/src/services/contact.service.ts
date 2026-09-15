@@ -121,6 +121,42 @@ export class ContactService {
     return created;
   }
 
+  async updateContact(id: string, input: Partial<ContactInput> & { active?: boolean }): Promise<Contact> {
+    if (this.supabase && env.supabaseOrganizationId) {
+      const updates: Record<string, unknown> = {};
+      if (input.fullName !== undefined) updates.full_name = input.fullName;
+      if (input.mobile !== undefined) updates.mobile_e164 = normalizePhone(input.mobile);
+      if (input.whatsapp !== undefined) updates.whatsapp_e164 = input.whatsapp ? normalizePhone(input.whatsapp) : null;
+      if (input.email !== undefined) updates.email = input.email || null;
+      if (input.department !== undefined) updates.department = input.department || null;
+      if (input.course !== undefined) updates.course = input.course || null;
+      if (input.semester !== undefined) updates.semester = input.semester || null;
+      if (input.batch !== undefined) updates.batch = input.batch || null;
+      if (input.group !== undefined) updates.category = input.group || null;
+      if (input.active !== undefined) updates.active = input.active;
+
+      const { data, error } = await this.supabase
+        .from('contacts')
+        .update(updates)
+        .eq('id', id)
+        .eq('organization_id', env.supabaseOrganizationId)
+        .select('*')
+        .single();
+
+      if (error) throw new Error(`Unable to update contact: ${error.message}`);
+      return this.toContact(data);
+    }
+
+    const contact = this.memoryContacts.find((item) => item.id === id);
+    if (!contact) throw new Error('Contact not found');
+    Object.assign(contact, {
+      ...input,
+      ...(input.mobile !== undefined ? { mobile: normalizePhone(input.mobile) } : {}),
+      ...(input.whatsapp !== undefined ? { whatsapp: input.whatsapp ? normalizePhone(input.whatsapp) : contact.mobile } : {}),
+    });
+    return contact;
+  }
+
   private toContact(contact: Record<string, unknown>): Contact {
     return {
       id: String(contact.id),

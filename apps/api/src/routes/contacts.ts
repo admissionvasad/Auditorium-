@@ -9,7 +9,7 @@ const contactService = new ContactService();
 const contactSchema = z.object({
   fullName: z.string().min(2),
   mobile: z.string().min(8),
-  whatsapp: z.string().min(8).optional(),
+  whatsapp: z.string().min(8).optional().or(z.literal('')),
   email: z.string().email().optional().or(z.literal('')),
   department: z.string().optional(),
   course: z.string().optional(),
@@ -17,6 +17,8 @@ const contactSchema = z.object({
   batch: z.string().optional(),
   group: z.string().optional(),
 });
+
+const contactUpdateSchema = contactSchema.partial().extend({ active: z.boolean().optional() });
 
 router.get('/', async (_req, res) => {
   try {
@@ -35,6 +37,17 @@ router.post('/', async (req, res) => {
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Invalid contact payload';
     res.status(400).json(failure('INVALID_CONTACT', message));
+  }
+});
+
+router.patch('/:id', async (req, res) => {
+  try {
+    const payload = contactUpdateSchema.parse(req.body);
+    const updated = await contactService.updateContact(req.params.id, payload);
+    res.json(success(updated));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to update contact';
+    res.status(message === 'Contact not found' ? 404 : 400).json(failure('INVALID_CONTACT_UPDATE', message));
   }
 });
 

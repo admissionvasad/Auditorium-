@@ -6,7 +6,13 @@ import authRouter from './routes/auth.js';
 import contactsRouter from './routes/contacts.js';
 import groupsRouter from './routes/groups.js';
 import templatesRouter from './routes/templates.js';
+import campaignsRouter from './routes/campaigns.js';
+import reportsRouter from './routes/reports.js';
+import settingsRouter from './routes/settings.js';
 import { env } from './config/env.js';
+import { requireAuth } from './middleware/auth.js';
+import webhookRouter from './routes/webhook.js';
+import inboxRouter from './routes/inbox.js';
 
 const app = express();
 
@@ -18,9 +24,14 @@ app.get('/', (_req, res) => {
 });
 app.use(env.apiBase, router);
 app.use(`${env.apiBase}/auth`, authRouter);
-app.use(`${env.apiBase}/contacts`, contactsRouter);
-app.use(`${env.apiBase}/groups`, groupsRouter);
-app.use(`${env.apiBase}/templates`, templatesRouter);
+app.use(`${env.apiBase}/webhooks`, webhookRouter);
+app.use(`${env.apiBase}/inbox`, requireAuth, inboxRouter);
+app.use(`${env.apiBase}/contacts`, requireAuth, contactsRouter);
+app.use(`${env.apiBase}/groups`, requireAuth, groupsRouter);
+app.use(`${env.apiBase}/templates`, requireAuth, templatesRouter);
+app.use(`${env.apiBase}/campaigns`, requireAuth, campaignsRouter);
+app.use(`${env.apiBase}/reports`, requireAuth, reportsRouter);
+app.use(`${env.apiBase}/settings`, requireAuth, settingsRouter);
 
 app.listen(env.port, () => {
   console.log(`API server listening on http://localhost:${env.port}`);
