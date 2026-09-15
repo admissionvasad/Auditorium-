@@ -7,7 +7,7 @@ const router = Router();
 const contactService = new ContactService();
 
 const contactSchema = z.object({
-  fullName: z.string().min(2),
+  fullName: z.string().min(2).optional().or(z.literal('')),
   mobile: z.string().min(8),
   whatsapp: z.string().min(8).optional().or(z.literal('')),
   email: z.string().email().optional().or(z.literal('')),

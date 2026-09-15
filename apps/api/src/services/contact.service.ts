@@ -3,7 +3,7 @@ import { env } from '../config/env.js';
 import { normalizePhone } from '../utils/normalize.js';
 
 export interface ContactInput {
-  fullName: string;
+  fullName?: string;
   mobile: string;
   whatsapp?: string;
   email?: string;
@@ -74,7 +74,7 @@ export class ContactService {
     const mobile = normalizePhone(input.mobile);
     const whatsapp = input.whatsapp ? normalizePhone(input.whatsapp) : mobile;
     const contact = {
-      fullName: input.fullName,
+      fullName: input.fullName || mobile,
       mobile,
       whatsapp,
       email: input.email ?? '',

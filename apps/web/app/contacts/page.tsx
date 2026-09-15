@@ -42,6 +42,68 @@ export default function ContactsPage() {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkText, setBulkText] = useState('');
+  const [countryCode, setCountryCode] = useState('91');
+  const [bulkImporting, setBulkImporting] = useState(false);
+
+  const bulkCount = useMemo(() => bulkText.split(/[\n,;]+/).map((l) => l.trim()).filter((l) => l.replace(/\D/g, '').length >= 8).length, [bulkText]);
+
+  function addCountryCode() {
+    const code = countryCode.replace(/\D/g, '');
+    if (!code) {
+      setError('Enter a country code first (e.g. 91 for India).');
+      return;
+    }
+    const lines = bulkText.split(/[\n,;]+/).map((l) => l.trim()).filter(Boolean);
+    const normalized = lines.map((line) => {
+      const digits = line.replace(/\D/g, '');
+      if (!digits) return line;
+      if (line.startsWith('+')) return line;
+      if (code.length > 0 && digits.length >= 11 && digits.startsWith(code)) return `+${digits}`;
+      return `+${code}${digits}`;
+    });
+    setBulkText(normalized.join('\n'));
+    setNotice(`Country code +${code} applied.`);
+    setError('');
+  }
+
+  async function importBulk() {
+    const lines = bulkText.split(/[\n,;]+/).map((l) => l.trim()).filter((l) => l.startsWith('+') && l.replace(/\D/g, '').length >= 8);
+    if (lines.length === 0) {
+      setError('No valid numbers found. Apply a country code first.');
+      return;
+    }
+    const token = getAuthToken();
+    if (!token) return router.replace('/login');
+    setBulkImporting(true);
+    setError('');
+    setNotice('');
+    let imported = 0;
+    for (const number of lines) {
+      try {
+        const response = await fetch(`${API_URL}/contacts`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ fullName: '', mobile: number }),
+        });
+        if (response.ok) imported += 1;
+      } catch {
+        // skip individual failures, continue with the rest
+      }
+    }
+    try {
+      const response = await fetch(`${API_URL}/contacts`, { headers: { Authorization: `Bearer ${token}` } });
+      const result = await response.json();
+      if (response.ok && result.success) setContacts(result.data || []);
+    } catch {
+      // list refresh best-effort
+    }
+    setNotice(`${imported} of ${lines.length} numbers added as contacts.`);
+    setBulkText('');
+    setBulkOpen(false);
+    setBulkImporting(false);
+  }
 
   const filteredContacts = useMemo(() => contacts.filter((contact) => {
     const query = search.toLowerCase().trim();
@@ -186,6 +248,7 @@ export default function ContactsPage() {
     <AppShell title="Contacts" subtitle="Manage your contact directory">
       <section style={{ background: 'white', borderRadius: 18, padding: 18, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', boxShadow: '0 10px 25px rgba(15,23,42,0.06)' }}>
         <button type="button" onClick={() => { setEditingId(null); setForm(initialForm); setError(''); setNotice(''); }} style={primaryButtonStyle}>+ Add Contact</button>
+        <button type="button" onClick={() => setBulkOpen(!bulkOpen)} style={secondaryButtonStyle}>{bulkOpen ? 'Close Bulk Paste' : 'Bulk Paste Numbers'}</button>
         <button type="button" onClick={() => importInputRef.current?.click()} style={secondaryButtonStyle}>Import Excel</button>
         <input ref={importInputRef} type="file" accept=".xlsx,.xls,.csv" onChange={importContacts} style={{ display: 'none' }} />
         <button type="button" onClick={exportContacts} style={secondaryButtonStyle}>Export Excel</button>
@@ -200,6 +263,38 @@ export default function ContactsPage() {
           <option value="All">All statuses</option>
         </select>
       </section>
+
+      {bulkOpen && (
+        <section style={{ background: 'white', borderRadius: 18, padding: 20, boxShadow: '0 10px 25px rgba(15,23,42,0.06)', display: 'grid', gap: 14 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h2 style={{ margin: 0 }}>Bulk paste contact numbers</h2>
+            <span style={{ color: '#64748b', fontSize: 14 }}>{bulkCount} valid number{bulkCount === 1 ? '' : 's'}</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 220px', gap: 12, alignItems: 'end' }}>
+            <div>
+              <label style={bulkLabelStyle}>Paste numbers (one per line, or separated by comma/semicolon)</label>
+              <textarea
+                value={bulkText}
+                onChange={(e) => { setBulkText(e.target.value); setError(''); }}
+                placeholder={'9876543210\n9988776655\n+919812345678'}
+                rows={7}
+                style={{ ...fieldStyle, resize: 'vertical', fontFamily: 'monospace' }}
+              />
+            </div>
+            <div>
+              <label style={bulkLabelStyle}>Country code (without +)</label>
+              <input value={countryCode} onChange={(e) => setCountryCode(e.target.value.replace(/\D/g, ''))} placeholder="91" style={fieldStyle} />
+              <button type="button" onClick={addCountryCode} style={{ ...secondaryButtonStyle, width: '100%', marginTop: 10 }}>Insert Country Code</button>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+            <button type="button" onClick={importBulk} disabled={bulkImporting || bulkCount === 0} style={primaryButtonStyle}>
+              {bulkImporting ? 'Importing...' : `Create ${bulkCount} Contact${bulkCount === 1 ? '' : 's'}`}
+            </button>
+            <button type="button" onClick={() => setBulkText('')} style={secondaryButtonStyle}>Clear</button>
+          </div>
+        </section>
+      )}
 
       <section style={{ display: 'grid', gridTemplateColumns: '420px 1fr', gap: 20 }}>
           <form onSubmit={handleSubmit} style={{ background: 'white', borderRadius: 18, padding: 20, boxShadow: '0 10px 25px rgba(15,23,42,0.06)' }}>
@@ -265,6 +360,13 @@ const fieldStyle: React.CSSProperties = {
   borderRadius: 10,
   border: '1px solid #cbd5e1',
   fontSize: 14,
+};
+
+const bulkLabelStyle: React.CSSProperties = {
+  display: 'block',
+  color: '#64748b',
+  fontSize: 13,
+  marginBottom: 6,
 };
 
 const primaryButtonStyle: React.CSSProperties = {
